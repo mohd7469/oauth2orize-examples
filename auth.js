@@ -49,27 +49,17 @@ passport.deserializeUser(function(id, done) {
  * to the `Authorization` header).  While this approach is not recommended by
  * the specification, in practice it is quite common.
  */
-passport.use(new BasicStrategy(
-  function(username, password, done) {
-    db.clients.findByClientId(username, function(err, client) {
-      if (err) { return done(err); }
-      if (!client) { return done(null, false); }
-      if (client.clientSecret != password) { return done(null, false); }
-      return done(null, client);
-    });
-  }
-));
+function verifyClient (clientId, clientSecret, done) {
+  db.clients.findByClientId(clientId, function(err, client) {
+    if (err) { return done(err); }
+    if (!client) { return done(null, false); }
+    if (client.clientSecret != clientSecret) { return done(null, false); }
+    return done(null, client);
+  });
+}
+passport.use(new BasicStrategy(verifyClient));
 
-passport.use(new ClientPasswordStrategy(
-  function(clientId, clientSecret, done) {
-    db.clients.findByClientId(clientId, function(err, client) {
-      if (err) { return done(err); }
-      if (!client) { return done(null, false); }
-      if (client.clientSecret != clientSecret) { return done(null, false); }
-      return done(null, client);
-    });
-  }
-));
+passport.use(new ClientPasswordStrategy(verifyClient));
 
 /**
  * BearerStrategy
