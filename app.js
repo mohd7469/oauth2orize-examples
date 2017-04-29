@@ -1,53 +1,38 @@
-/**
- * Module dependencies.
- */
-var express = require('express')
-  , passport = require('passport')
-  , site = require('./site')
-  , oauth2 = require('./oauth2')
-  , user = require('./user')
-  , client = require('./client')
-  , util = require('util')
-  
-  
+'use strict';
+
+const express = require('express');
+const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
+const errorHandler = require('errorhandler');
+const session = require('express-session');
+const passport = require('passport');
+const routes = require('./routes');
+
 // Express configuration
-  
-var app = express.createServer();
+const app = express();
 app.set('view engine', 'ejs');
-app.use(express.logger());
-app.use(express.cookieParser());
-app.use(express.bodyParser());
-app.use(express.session({ secret: 'keyboard cat' }));
-/*
-app.use(function(req, res, next) {
-  console.log('-- session --');
-  console.dir(req.session);
-  //console.log(util.inspect(req.session, true, 3));
-  console.log('-------------');
-  next()
-});
-*/
+app.use(cookieParser());
+app.use(bodyParser.json({ extended: false }));
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(errorHandler());
+app.use(session({ secret: 'keyboard cat', resave: false, saveUninitialized: false }));
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(app.router);
-app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
 
 // Passport configuration
-
 require('./auth');
 
+app.get('/', routes.site.index);
+app.get('/login', routes.site.loginForm);
+app.post('/login', routes.site.login);
+app.get('/logout', routes.site.logout);
+app.get('/account', routes.site.account);
 
-app.get('/', site.index);
-app.get('/login', site.loginForm);
-app.post('/login', site.login);
-app.get('/logout', site.logout);
-app.get('/account', site.account);
+app.get('/dialog/authorize', routes.oauth2.authorization);
+app.post('/dialog/authorize/decision', routes.oauth2.decision);
+app.post('/oauth/token', routes.oauth2.token);
 
-app.get('/dialog/authorize', oauth2.authorization);
-app.post('/dialog/authorize/decision', oauth2.decision);
-app.post('/oauth/token', oauth2.token);
+app.get('/api/userinfo', routes.user.info);
+app.get('/api/clientinfo', routes.client.info);
 
-app.get('/api/userinfo', user.info);
-app.get('/api/clientinfo', client.info);
-
-app.listen(3000);
+app.listen(process.env.PORT || 3000);
