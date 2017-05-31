@@ -8,11 +8,11 @@
  * @api private
  */
 module.exports.getUid = function(length) {
-  const uid = '';
+  var uid = '';
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   const charsLength = chars.length;
 
-  for (let i = 0; i < length; ++i) {
+  for (var i = 0; i < length; ++i) {
     uid += chars[getRandomInt(0, charsLength - 1)];
   }
 
