@@ -78,11 +78,13 @@ server.exchange(oauth2orize.exchange.code((client, code, redirectUri, done) => {
     if (error) return done(error);
     if (client.id !== authCode.clientId) return done(null, false);
     if (redirectUri !== authCode.redirectUri) return done(null, false);
-    
+
     const token = utils.getUid(256);
     db.accessTokens.save(token, authCode.userId, authCode.clientId, (error) => {
       if (error) return done(error);
-      return done(null, token);
+      // Add custom params, e.g. the username
+      let params = { username: authCode.userName };
+      return done(null, token, null, params);
     });
   });
 }));
