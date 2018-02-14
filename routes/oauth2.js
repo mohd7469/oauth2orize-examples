@@ -47,7 +47,7 @@ server.deserializeClient((id, done) => {
 
 server.grant(oauth2orize.grant.code((client, redirectUri, user, ares, done) => {
   const code = utils.getUid(16);
-  db.authorizationCodes.save(code, client.id, redirectUri, user.id, (error) => {
+  db.authorizationCodes.save(code, client.id, redirectUri, user.id, user.username, (error) => {
     if (error) return done(error);
     return done(null, code);
   });
@@ -71,7 +71,8 @@ server.grant(oauth2orize.grant.token((client, user, ares, done) => {
 // `client`, which is exchanging `code` and any `redirectUri` from the
 // authorization request for verification. If these values are validated, the
 // application issues an access token on behalf of the user who authorized the
-// code.
+// code. The issued access token response can include a refresh token and
+// custom parameters by adding these to the `done()` call
 
 server.exchange(oauth2orize.exchange.code((client, code, redirectUri, done) => {
   db.authorizationCodes.find(code, (error, authCode) => {
@@ -84,6 +85,7 @@ server.exchange(oauth2orize.exchange.code((client, code, redirectUri, done) => {
       if (error) return done(error);
       // Add custom params, e.g. the username
       let params = { username: authCode.userName };
+      // Call `done(err, accessToken, [refreshToken], [params])` to issue an access token
       return done(null, token, null, params);
     });
   });
@@ -109,6 +111,7 @@ server.exchange(oauth2orize.exchange.password((client, username, password, scope
       const token = utils.getUid(256);
       db.accessTokens.save(token, user.id, client.clientId, (error) => {
         if (error) return done(error);
+        // Call `done(err, accessToken, [refreshToken], [params])`, see oauth2orize.exchange.code
         return done(null, token);
       });
     });
@@ -131,6 +134,7 @@ server.exchange(oauth2orize.exchange.clientCredentials((client, scope, done) => 
     // Pass in a null for user id since there is no user with this grant type
     db.accessTokens.save(token, null, client.clientId, (error) => {
       if (error) return done(error);
+      // Call `done(err, accessToken, [refreshToken], [params])`, see oauth2orize.exchange.code
       return done(null, token);
     });
   });
