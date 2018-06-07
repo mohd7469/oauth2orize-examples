@@ -187,7 +187,7 @@ module.exports.authorization = [
 // client, the above grant middleware configured above will be invoked to send
 // a response.
 
-exports.decision = [
+module.exports.decision = [
   login.ensureLoggedIn(),
   server.decision(),
 ];
@@ -200,7 +200,7 @@ exports.decision = [
 // exchange middleware will be invoked to handle the request. Clients must
 // authenticate when making requests to this endpoint.
 
-exports.token = [
+module.exports.token = [
   passport.authenticate(['basic', 'oauth2-client-password'], { session: false }),
   server.token(),
   server.errorHandler(),
