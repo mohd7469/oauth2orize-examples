@@ -31,6 +31,20 @@ server.deserializeClient((id, done) => {
   });
 });
 
+function issueTokens(userId, clientId, done) {
+  db.users.findById(userId, (error, user) => {
+    const accessToken = utils.getUid(256);
+    const refreshToken = utils.getUid(256);
+    db.accessTokens.save(accessToken, userId, clientId, (error) => {
+      if (error) return done(error);
+      db.refreshTokens.save(refreshToken, userId, clientId, (error) => {
+        if (error) return done(error);
+        done(null, accessToken, refreshToken);
+      });
+    });
+  });
+}
+
 // Register supported grant types.
 //
 // OAuth 2.0 specifies a framework that allows users to grant client
@@ -60,11 +74,7 @@ server.grant(oauth2orize.grant.code((client, redirectUri, user, ares, done) => {
 // values.
 
 server.grant(oauth2orize.grant.token((client, user, ares, done) => {
-  const token = utils.getUid(256);
-  db.accessTokens.save(token, user.id, client.clientId, (error) => {
-    if (error) return done(error);
-    return done(null, token);
-  });
+  issueTokens(user.id, client.clientId, done);
 }));
 
 // Exchange authorization codes for access tokens. The callback accepts the
@@ -78,12 +88,8 @@ server.exchange(oauth2orize.exchange.code((client, code, redirectUri, done) => {
     if (error) return done(error);
     if (client.id !== authCode.clientId) return done(null, false);
     if (redirectUri !== authCode.redirectUri) return done(null, false);
-    
-    const token = utils.getUid(256);
-    db.accessTokens.save(token, authCode.userId, authCode.clientId, (error) => {
-      if (error) return done(error);
-      return done(null, token);
-    });
+
+    issueTokens(authCode.userId, client.clientId, done);
   });
 }));
 
@@ -104,11 +110,7 @@ server.exchange(oauth2orize.exchange.password((client, username, password, scope
       if (!user) return done(null, false);
       if (password !== user.password) return done(null, false);
       // Everything validated, return the token
-      const token = utils.getUid(256);
-      db.accessTokens.save(token, user.id, client.clientId, (error) => {
-        if (error) return done(error);
-        return done(null, token);
-      });
+      issueTokens(user.id, client.clientId, done);
     });
   });
 }));
@@ -125,11 +127,30 @@ server.exchange(oauth2orize.exchange.clientCredentials((client, scope, done) => 
     if (!localClient) return done(null, false);
     if (localClient.clientSecret !== client.clientSecret) return done(null, false);
     // Everything validated, return the token
-    const token = utils.getUid(256);
     // Pass in a null for user id since there is no user with this grant type
-    db.accessTokens.save(token, null, client.clientId, (error) => {
-      if (error) return done(error);
-      return done(null, token);
+    issueTokens(null, client.clientId, done);
+  });
+}));
+
+// issue new tokens and remove the old ones
+server.exchange(oauth2orize.exchange.refreshToken((client, refreshToken, scope, done) => {
+  db.refreshTokens.find(refreshToken, (error, token) => {
+    if (error) return done(error);
+    issueTokens(token.id, client.id, (err, accessToken, refreshToken) => {
+      if (err) {
+        done(err, null, null);
+      }
+      db.accessTokens.removeByUserIdAndClientId(token.userId, token.clientId, (err) => {
+        if (err) {
+          done(err, null, null);
+        }
+        db.refreshTokens.removeByUserIdAndClientId(token.userId, token.clientId, (err) => {
+          if (err) {
+            done(err, null, null);
+          }
+          done(null, accessToken, refreshToken);
+        });
+      });
     });
   });
 }));
@@ -163,14 +184,14 @@ module.exports.authorization = [
     });
   }, (client, user, done) => {
     // Check if grant request qualifies for immediate approval
-    
+
     // Auto-approve
     if (client.isTrusted) return done(null, true);
-    
+
     db.accessTokens.findByUserIdAndClientId(user.id, client.clientId, (error, token) => {
       // Auto-approve
       if (token) return done(null, true);
-      
+
       // Otherwise ask user
       return done(null, false);
     });
