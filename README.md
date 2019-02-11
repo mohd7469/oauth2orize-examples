@@ -1,8 +1,3 @@
-Unmaintained
-===
-
-If you would like to maintain this project, please email your GitHub username to gerges@beshay.org to start the transfer process.
-
 oauth2orize: oauth2 provider example
 ===
 
