@@ -1,6 +1,6 @@
 'use strict';
 
-const oauth2orize = require('oauth2orize');
+const oauth2orize = require('@poziworld/oauth2orize');
 const passport = require('passport');
 const login = require('connect-ensure-login');
 const db = require('../db');
@@ -9,7 +9,7 @@ const utils = require('../utils');
 // Create OAuth 2.0 server
 const server = oauth2orize.createServer();
 
-// Register serialialization and deserialization functions.
+// Register serialization and deserialization functions.
 //
 // When a client redirects a user to user authorization endpoint, an
 // authorization transaction is initiated. To complete the transaction, the
