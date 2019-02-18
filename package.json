@@ -1,8 +1,14 @@
 {
   "name": "oauth2orize-examples",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "repository": "https://github.com/gerges-beshay/oauth2orize-examples.git",
   "license": "MIT",
+  "contributors": [
+    {
+      "name": "PoziWorld",
+      "url": "https://github.com/PoziWorld"
+    }
+  ],
   "scripts": {
     "start": "node app.js"
   },
