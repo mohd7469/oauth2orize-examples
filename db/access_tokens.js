@@ -18,3 +18,13 @@ module.exports.save = (token, userId, clientId, done) => {
   tokens[token] = { userId, clientId };
   done();
 };
+
+module.exports.removeByUserIdAndClientId = (userId, clientId, done) => {
+  for (const token in tokens) {
+      if (tokens[token].userId === userId && tokens[token].clientId === clientId) {
+          delete tokens[token];
+          return done(null);
+      }
+  }
+  return done(new Error('Token Not Found'));
+};
