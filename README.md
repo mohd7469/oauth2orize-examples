@@ -18,11 +18,46 @@ npm install
 Usage
 ===
 
+## Locally
+
 ```bash
 node app.js
 ```
 
 Visit <http://localhost:3000/login> to see the server running locally.
+
+## [Serverless](https://en.wikipedia.org/wiki/Serverless_computing)
+
+### [Vercel](https://vercel.com/home)
+
+1. [Download](https://vercel.com/download) either Vercel Desktop (preferred) or Vercel CLI.
+2. Create a `.vercelignore` file in the root of the package (where package.json is located) with the following contents:
+```ignore
+node_modules
+.eslintrc
+LICENSE.md
+README.md
+```
+3. Create a `vercel.json` file in the root of the package with the following contents:
+```json
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "app.js",
+      "use": "@now/node-server"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "app.js"
+    }
+  ]
+}
+```
+4. Execute `vercel` in the terminal/console. (If the command is not recognized, you might have to restart your computer.)
+5. Once you see the “Success! Deployment ready” message in the terminal, follow the URL of the deployment provided by the Vercel CLI.
 
 Provider / Consumer Walkthrough
 ===

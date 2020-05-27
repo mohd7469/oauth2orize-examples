@@ -1,6 +1,6 @@
 'use strict';
 
-const oauth2orize = require('oauth2orize');
+const oauth2orize = require('@poziworld/oauth2orize');
 const passport = require('passport');
 const login = require('connect-ensure-login');
 const db = require('../db');
@@ -9,7 +9,7 @@ const utils = require('../utils');
 // Create OAuth 2.0 server
 const server = oauth2orize.createServer();
 
-// Register serialialization and deserialization functions.
+// Register serialization and deserialization functions.
 //
 // When a client redirects a user to user authorization endpoint, an
 // authorization transaction is initiated. To complete the transaction, the
@@ -39,7 +39,9 @@ function issueTokens(userId, clientId, done) {
       if (error) return done(error);
       db.refreshTokens.save(refreshToken, userId, clientId, (error) => {
         if (error) return done(error);
-        done(null, accessToken, refreshToken);
+        // Add custom params, e.g. the username
+        const params = { username: authCode.userName };
+        return done(null, accessToken, refreshToken, params);
       });
     });
   });
@@ -61,7 +63,7 @@ function issueTokens(userId, clientId, done) {
 
 server.grant(oauth2orize.grant.code((client, redirectUri, user, ares, done) => {
   const code = utils.getUid(16);
-  db.authorizationCodes.save(code, client.id, redirectUri, user.id, (error) => {
+  db.authorizationCodes.save(code, client.id, redirectUri, user.id, user.username, (error) => {
     if (error) return done(error);
     return done(null, code);
   });
@@ -81,7 +83,8 @@ server.grant(oauth2orize.grant.token((client, user, ares, done) => {
 // `client`, which is exchanging `code` and any `redirectUri` from the
 // authorization request for verification. If these values are validated, the
 // application issues an access token on behalf of the user who authorized the
-// code.
+// code. The issued access token response can include a refresh token and
+// custom parameters by adding these to the `done()` call
 
 server.exchange(oauth2orize.exchange.code((client, code, redirectUri, done) => {
   db.authorizationCodes.find(code, (error, authCode) => {
@@ -160,7 +163,7 @@ server.exchange(oauth2orize.exchange.refreshToken((client, refreshToken, scope, 
 // `authorization` middleware accepts a `validate` callback which is
 // responsible for validating the client making the authorization request. In
 // doing so, is recommended that the `redirectUri` be checked against a
-// registered value, although security requirements may vary accross
+// registered value, although security requirements may vary across
 // implementations. Once validated, the `done` callback must be invoked with
 // a `client` instance, as well as the `redirectUri` to which the user will be
 // redirected after an authorization decision is obtained.
@@ -208,7 +211,7 @@ module.exports.authorization = [
 // client, the above grant middleware configured above will be invoked to send
 // a response.
 
-exports.decision = [
+module.exports.decision = [
   login.ensureLoggedIn(),
   server.decision(),
 ];
@@ -221,7 +224,7 @@ exports.decision = [
 // exchange middleware will be invoked to handle the request. Clients must
 // authenticate when making requests to this endpoint.
 
-exports.token = [
+module.exports.token = [
   passport.authenticate(['basic', 'oauth2-client-password'], { session: false }),
   server.token(),
   server.errorHandler(),
