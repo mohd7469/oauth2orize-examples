@@ -40,7 +40,7 @@ function issueTokens(userId, clientId, done) {
       db.refreshTokens.save(refreshToken, userId, clientId, (error) => {
         if (error) return done(error);
         // Add custom params, e.g. the username
-        const params = { username: authCode.userName };
+        const params = { username: user.name };
         return done(null, accessToken, refreshToken, params);
       });
     });
