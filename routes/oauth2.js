@@ -139,7 +139,7 @@ server.exchange(oauth2orize.exchange.clientCredentials((client, scope, done) => 
 server.exchange(oauth2orize.exchange.refreshToken((client, refreshToken, scope, done) => {
   db.refreshTokens.find(refreshToken, (error, token) => {
     if (error) return done(error);
-    issueTokens(token.id, client.id, (err, accessToken, refreshToken) => {
+    issueTokens(token.userId, client.clientId, (err, accessToken, refreshToken) => {
       if (err) {
         done(err, null, null);
       }
