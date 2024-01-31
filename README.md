@@ -45,7 +45,7 @@ README.md
   "builds": [
     {
       "src": "app.js",
-      "use": "@now/node-server"
+      "use": "@now/node"
     }
   ],
   "routes": [
